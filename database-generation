@@ -1,0 +1,204 @@
+#database
+
+#fasta序列多行变单行
+seqkit seq test.fa -w 0
+#awk '/^>/&&NR>1{print "";}{printf "%s",/^>/?$0"\n":$0}'     test.fa >test2.fa
+#awk '{if($0~/>/) name=$0 ;else seq[name]=seq[name]$0;}END{for(i in seq) {if(length(seq[i])>len) print i"\n"seq[i]}}' test.fa >test2.fa
+
+#RNA to DNA
+seqkit seq --rna2dna 1.fasta > 2.fasta
+
+
+##transfer the database to accession number 
+awk  -F '.'  '{print $1}' SILVA_138.1_LSUParc_tax_silva_trunc.fasta > SILVA_138.1_LSUParc_tax_silva_trunc_assession.fasta
+
+
+grep -r ">" SILVA_138.1_LSUParc_tax_silva_trunc_assession.fasta|cut -d">" -f 2  > accession
+
+wc -l accession
+##link the accession number to taxid and taxname
+conda install -c bioconda entrez-direct
+pip install -U ncbitax2lin /conda install -c bioconda taxonkit 
+wget https://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz
+
+
+touch accession2taxid
+for i in $(cat accession)
+do
+esummary -db nuccore -id $i | xtract -pattern DocumentSummary -element Caption,TaxId >> accession2taxid
+done
+
+cat accession | epost -db nuccore | esummary -db nuccore | xtract -pattern DocumentSummary -element Caption,TaxId > accession2taxid
+
+awk '{print $2}' accession2taxid > taxids_0
+grep -v -w "0" taxids_0 > taxids
+wc -l taxids_0
+wc -l taxids
+
+taxonkit lineage --data-dir ../taxdump taxids > lineage.txt
+
+#taxonkit reformat -P --data-dir ../taxdump lineage.txt \
+#--delimiter ";" \
+#--fill-miss-rank \
+#--format "{k};{p};{c};{o};{f};{g};{s}" \
+#--miss-rank-repl "0" \
+#--miss-rank-repl-prefix "unclassified " \
+#| cut -f 1,3 > taxid2lineage
+
+
+
+taxonkit reformat -P --data-dir ../taxdump lineage.txt \
+--delimiter ";" \
+--format "{k};{p};{c};{o};{f};{g};{s}" \
+| cut -f 1,3 > taxid2lineage
+
+
+ sed "/o__;f__;/d" taxid2lineage > taxid2lineage_final
+
+awk '{print $1}' taxid2lineage_final > taxid_assigned
+
+touch accession2taxid_assigned
+for i in $(cat taxid_assigned)
+do
+grep -w "$i" accession2taxid >> accession2taxid_assigned
+done
+
+
+awk '{print $1}' accession2taxid_assigned > accession_assigned_0
+sort -n accession_assigned_0 | uniq > accession_assigned
+
+wc -l accession
+wc -l accession_assigned
+
+wc -l taxid_assigned
+
+taxonkit lineage --data-dir ../taxdump taxid_assigned > lineage_assigned.txt
+
+taxonkit reformat -P --data-dir ../taxdump lineage_assigned.txt \
+--delimiter ";" \
+--fill-miss-rank \
+--format "{k};{p};{c};{o};{f};{g};{s}" \
+--miss-rank-repl "0" \
+--miss-rank-repl-prefix "unclassified " \
+| cut -f 1,3 > taxid2lineage_assigned
+
+
+
+taxid2lineage_assigned
+########################################################################
+#extract fasta with new accession ids
+
+/home/wang/genome_tools/faSomeRecords ../SILVA_138.1_LSUParc_tax_silva_trunc_assession.fasta accession_assigned SILVA_138.1_LSUParc_tax_silva_trunc_assigned.fasta
+
+seqkit rmdup SILVA_138.1_LSUParc_tax_silva_trunc_assigned.fasta  -n -o SILVA_138.1_LSUParc_tax_silva_trunc_assigned_dump_removed.fasta
+
+seqkit seq SILVA_138.1_LSUParc_tax_silva_trunc_assigned_dump_removed.fasta -w 0 > SILVA_138.1_LSUParc_tax_silva_trunc_assigned_dump_removed_singleline.fasta
+
+
+
+#################################################################################
+#deduplication to remove redundant sequences with vsearch (100% similarity)
+SILVA_138.1_LSUParc_tax_silva_trunc_assigned_dump_removed_singleline.fasta
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#extract genes at family level
+grep -A 1 -E "Suillus|Rhizopogon" SILVA_138.1_LSUParc_tax_silva_trunc.fasta > suillu_rhizopogon_database.fasta
+
+seqkit rmdup input.fasta  -s -o output_dump_removed.fasta #去除重复的序列
+
+1. alignment
+clustalo -i input.fasta > output.aln
+
+
+2. trimming
+
+
+3. short database processing
+seqkit seq -g -u input.aln > output.fasaln #remove gap 
+
+
+
+
+
+
+fastq_to_fasta -i input.fq -o out.fa -Q 33
+
+ls *.fasta |cut -d"_" -f 1,2,3 |sort -u|while read id ; do
+blastn -subject /media/sf_linux_share/approach_2_test/database/suillu_rhizopogon_database_rmdup_2.fasta  \
+-query ${id}_R1.fastq.fasta \
+-out ${id}_shortdatabase_2.result \
+-evalue 1e-5  -num_alignments 3 -num_threads 1 -parse_deflines  -outfmt 6 \
+-ungapped -strand both -perc_identity 99 -qcov_hsp_perc 30 
+done
+
+
+
+
+
+
+
+
+
+
+
+
+blastn -db database/suillus_rhizopogon \
+-query AA376R_S97_L003_R1.fastq.fasta \
+-out AA376R_S97_L003_R1.fastq.fasta.result \
+-evalue 1e-5  -num_alignments 3 -num_threads 1 -parse_deflines \
+-ungapped -strand both -perc_identity 99 -qcov_hsp_perc 70
+
+
+
+
+\
+-template_length 121
+
+
+
+-outfmt 6 \
+-max_target_seqs 3
+-subject database_name -subject_loc start-stop 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
