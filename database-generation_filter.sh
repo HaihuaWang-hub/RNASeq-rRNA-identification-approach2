@@ -3,6 +3,7 @@
 module load metaxa2
 module load ITSx
 module load seqkit
+module load clustalo
 
 CPU="8"
 
