@@ -9,34 +9,13 @@ CPU="8"
 #This is the code for generation of mulit- short database D1D2 region
 
 
-
-
-###############################################################
-#Download the raw LSU database #
-
-
-#The database was downloaded from SILVA collected un-filtered database 
-#As well, the sequences could be collected from International Nucleotide Sequence Database Collaboration (INSDC) databases
-
-workdir="******************"
-mkdir $work_dir/raw_database
-
-wget -c https://www.arb-silva.de/fileadmin/silva_databases/current/Exports/SILVA_138.1_LSUParc_tax_silva.fasta.gz $work_dir/raw_database
-gunzip $work_dir/raw_database/SILVA_138.1_LSUParc_tax_silva.fasta.gz
-
-#RNA to DNA
-seqkit seq --rna2dna 1.fasta > 2.fasta
-
-
-
-
 ###############################################
 #pre-filter the LSU region by using the metaxa2
 
 
 #https://microbiology.se/publ/metaxa2_users_guide_2.2.pdf
-metaxa2 -i suillu_rhizopogon_database.fasta 
-        -o suillu_rhizopogon_database_LSU 
+metaxa2 -i SILVA_138.1_LSUParc_tax_silva_DNA.fasta \
+        -o SILVA_138.1_LSUParc_tax_silva_DNA_database_LSU \
         -f fasta \
         -t e \
         -g lsu \
@@ -46,6 +25,8 @@ metaxa2 -i suillu_rhizopogon_database.fasta
         --not_found T \
         --preserve T \
         --cpu $CPU --multi_thread T 
+        
+       
         
 # metaxa2 -i suillu_rhizopogon_database.fasta \     #input file name
 #        -o suillu_rhizopogon_database_LSU \        #output
@@ -65,22 +46,22 @@ metaxa2 -i suillu_rhizopogon_database.fasta
 
         
 ###############################################
-#pre-filter the LSU region by using the ITSx
+#Remove the non-LSU region by using the ITSx
 
 #https://github.com/ncbi/ITSx/blob/master/ITSx%20User's%20Guide.pdf
-ITSx -i suillu_rhizopogon_database_LSU.eukaryota.fasta \
-     -o suillu_rhizopogon_database_ITS \
-     -t Fungi \
-     --save_regions SSU,ITS1,5.8S,ITS2,LSU \
-     --only_full F \
-     --selection_priority domains \
-     --complement T \
-     --truncate T \
-     --not_found T \
-     --preserve T \
-     --cpu $CPU --multi_thread T
+#ITSx -i SILVA_138.1_LSUParc_tax_silva_DNA_database_LSU.eukaryota.fasta \
+#     -o SILVA_138.1_LSUParc_tax_silva_DNA_database_LSU_ITSx \
+#     -t Fungi \
+#     --save_regions SSU,ITS1,5.8S \
+#     --only_full F \
+#     --selection_priority domains \
+#     --complement T \
+#     --truncate T \
+#     --not_found T \
+ #    --preserve T \
+ #    --cpu $CPU --multi_thread T
 
-
+# mv SILVA_138.1_LSUParc_tax_silva_DNA_database_LSU_ITSx_no_detections.fasta SILVA_138.1_LSUParc_tax_silva_LSU_DNA_pre-filtered_database.fasta
 
 
 # ITSx -i suillu_rhizopogon_database_LSU.eukaryota.fasta \
@@ -99,15 +80,15 @@ ITSx -i suillu_rhizopogon_database_LSU.eukaryota.fasta \
 
 
 ###############################################
-#filter the LSU region by using one of the D1D2 primers
+#filter the LSU region by using one of the D1D2 primers, meanwhile, trim the sequence based on the primers
 
 
 #generate the sigle-line sequence fasta file
-seqkit seq test.fa -w 0
+seqkit seq SILVA_138.1_LSUParc_tax_silva_DNA_database_LSU.eukaryota.fasta -w 0 > SILVA_138.1_LSUParc_tax_silva_LSU_DNA_pre-filtered_database_single_line.fasta
 
 
-fasta_file="test.fasta"
-result_file="result.fasta"
+fasta_file="SILVA_138.1_LSUParc_tax_silva_LSU_DNA_pre-filtered_database_single_line.fasta"
+result_file="SILVA_138.1_LSUParc_tax_silva_LSU_DNA_pre-filtered_database_result.fasta"
 forward_LR0R="ACCCGCTGAACTTAAGC"
 reverse_LR3="CCCGTCTTGAAACACGG"
 middle_LR21="AAAGGGAAACGCTTGA"
@@ -127,7 +108,7 @@ else
        then
           echo $line| grep -i -o -P '(?<=ACCCGCTGAACTTAAGC).*(?=CCCGTCTTGAAACACGG)' >> $result_file
        else
-          echo ${line#*${forward_LR0R}} >> $result_file
+          echo ${line#*${forward_LR0R}}  >> $result_file
        fi
    else
        if [[ "$var3" != "" ]];
@@ -136,6 +117,20 @@ else
        fi
    fi
 fi
-done < test.fasta
+done < $fasta_file
+
+
+#remove the accession NO. without sequence and filter the sequence shorter than 250bp
+seqkit seq -g -w 0 -m 250 $result_file > SILVA_138.1_LSUParc_tax_silva_LSU_DNA_filter_final.fasta
+
+
+
+
+
+
+
+ # clustalo -i SILVA_138.1_LSUParc_tax_silva_LSU_DNA_filter_final.fasta -o SILVA_138.1_LSUParc_tax_silva_LSU_DNA_filter_final.aln
+
+
 
 
