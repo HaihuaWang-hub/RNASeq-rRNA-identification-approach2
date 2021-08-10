@@ -122,8 +122,13 @@ done < $fasta_file
 
 
 #remove the accession NO. without sequence and filter the sequence shorter than 250bp
-seqkit seq -g -w 0 -m 250 $result_file > SILVA_138.1_LSUParc_tax_silva_LSU_DNA_filter_final.fasta
+seqkit seq -g -w 0 -m 250 $result_file > SILVA_138.1_LSUParc_tax_silva_LSU_DNA_filter_single_line.fasta
 
+
+
+
+
+awk  -F '.'  '{print $1}' SILVA_138.1_LSUParc_tax_silva_LSU_DNA_filter_single_line.fasta > SILVA_138.1_LSUParc_tax_silva_LSU_DNA_filter_final.fasta
 
 
 
