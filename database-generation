@@ -1,204 +1,141 @@
-#database
+#!/bin/bash -l
 
-#fasta序列多行变单行
-seqkit seq test.fa -w 0
-#awk '/^>/&&NR>1{print "";}{printf "%s",/^>/?$0"\n":$0}'     test.fa >test2.fa
-#awk '{if($0~/>/) name=$0 ;else seq[name]=seq[name]$0;}END{for(i in seq) {if(length(seq[i])>len) print i"\n"seq[i]}}' test.fa >test2.fa
+module load metaxa2
+module load ITSx
+module load seqkit
+
+CPU="8"
+
+#This is the code for generation of mulit- short database D1D2 region
+
+
+
+
+###############################################################
+#Download the raw LSU database #
+
+
+#The database was downloaded from SILVA collected un-filtered database 
+#As well, the sequences could be collected from International Nucleotide Sequence Database Collaboration (INSDC) databases
+
+workdir="******************"
+mkdir $work_dir/raw_database
+
+wget -c https://www.arb-silva.de/fileadmin/silva_databases/current/Exports/SILVA_138.1_LSUParc_tax_silva.fasta.gz $work_dir/raw_database
+gunzip $work_dir/raw_database/SILVA_138.1_LSUParc_tax_silva.fasta.gz
 
 #RNA to DNA
 seqkit seq --rna2dna 1.fasta > 2.fasta
 
 
-##transfer the database to accession number 
-awk  -F '.'  '{print $1}' SILVA_138.1_LSUParc_tax_silva_trunc.fasta > SILVA_138.1_LSUParc_tax_silva_trunc_assession.fasta
 
 
-grep -r ">" SILVA_138.1_LSUParc_tax_silva_trunc_assession.fasta|cut -d">" -f 2  > accession
-
-wc -l accession
-##link the accession number to taxid and taxname
-conda install -c bioconda entrez-direct
-pip install -U ncbitax2lin /conda install -c bioconda taxonkit 
-wget https://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz
+###############################################
+#pre-filter the LSU region by using the metaxa2
 
 
-touch accession2taxid
-for i in $(cat accession)
+#https://microbiology.se/publ/metaxa2_users_guide_2.2.pdf
+metaxa2 -i suillu_rhizopogon_database.fasta 
+        -o suillu_rhizopogon_database_LSU 
+        -f fasta \
+        -t e \
+        -g lsu \
+        --complement T \
+        --truncate T \
+        --selection_priority domains \
+        --not_found T \
+        --preserve T \
+        --cpu $CPU --multi_thread T 
+        
+# metaxa2 -i suillu_rhizopogon_database.fasta \     #input file name
+#        -o suillu_rhizopogon_database_LSU \        #output
+#        -f fasta \                                 #input format {a, auto; f, fasta; q, fastq; p, paired-end; pa, paired-fasta}
+#        -t e \                                     #target organisms  {b, bacteria, a, archaea, e, eukaryota,m, mitochondrial, c,chloroplast, A, all}
+#        -g lsu \                                   #identify and extract SSU or LSU rRNA genes (lsu/ssu)
+#        --mode a \                                 # Controls the Metaxa2 operating mode {m,metagenome, g,genome, a, auto}
+#        --complement T \                           # Metaxa2 checks both DNA strands for matches to HMM-profiles.  (T/F)
+#        --truncate T \                             # Removes ends of SSU/LSU sequences if they are outside of the SSU/LSU region
+#        --selection_priority domains \             # Determines what will be of highest priority when assessing the origin of the sequence {score, sum, domains, eval}
+#        --not_found T \                            # If on, Metaxa outputs a list of entries that do notseem to be SSU/LSU sequences
+#        --preserve T \
+#        --cpu $CPU --multi_thread T 
+
+
+
+
+        
+###############################################
+#pre-filter the LSU region by using the ITSx
+
+#https://github.com/ncbi/ITSx/blob/master/ITSx%20User's%20Guide.pdf
+ITSx -i suillu_rhizopogon_database_LSU.eukaryota.fasta \
+     -o suillu_rhizopogon_database_ITS \
+     -t Fungi \
+     --save_regions SSU,ITS1,5.8S,ITS2,LSU \
+     --only_full F \
+     --selection_priority domains \
+     --complement T \
+     --truncate T \
+     --not_found T \
+     --preserve T \
+     --cpu $CPU --multi_thread T
+
+
+
+
+# ITSx -i suillu_rhizopogon_database_LSU.eukaryota.fasta \
+#     -o suillu_rhizopogon_database_ITS \
+#     -t Fungi \    #Organiams
+#     --save_regions SSU,ITS1,5.8S,ITS2,LSU \ 
+#     --only_full F \  
+#     --selection_priority domains \  # Determines what will be of highest priority when assessing the origin of the sequence {score, sum, domains, eval}
+#     --complement T \  checks both DNA strands for matches to HMM-profiles.  (T/F)
+#     --truncate T \
+#     --not_found T \
+#     --preserve T \
+#     --cpu $CPU --multi_thread T
+
+
+
+
+###############################################
+#filter the LSU region by using one of the D1D2 primers
+
+
+#generate the sigle-line sequence fasta file
+seqkit seq test.fa -w 0
+
+
+fasta_file="test.fasta"
+result_file="result.fasta"
+forward_LR0R="ACCCGCTGAACTTAAGC"
+reverse_LR3="CCCGTCTTGAAACACGG"
+middle_LR21="AAAGGGAAACGCTTGA"
+middle_LF402F="CCGATAGCG"
+while read line
 do
-esummary -db nuccore -id $i | xtract -pattern DocumentSummary -element Caption,TaxId >> accession2taxid
-done
+   var1=$(echo $line | grep ">" )
+   var2=$(echo $line | grep "${forward_LR0R}" )
+   var3=$(echo $line | grep "${reverse_LR3}" )
+if [[ "$var1" != "" ]];
+then
+   echo $line >> $result_file
+else
+   if [[ "$var2" != "" ]];
+   then
+       if [[ "$var3" != "" ]];
+       then
+          echo $line| grep -i -o -P '(?<=ACCCGCTGAACTTAAGC).*(?=CCCGTCTTGAAACACGG)' >> $result_file
+       else
+          echo ${line#*${forward_LR0R}} >> $result_file
+       fi
+   else
+       if [[ "$var3" != "" ]];
+       then
+          echo ${line%${reverse_LR3}*} >> $result_file
+       fi
+   fi
+fi
+done < test.fasta
 
-cat accession | epost -db nuccore | esummary -db nuccore | xtract -pattern DocumentSummary -element Caption,TaxId > accession2taxid
 
-awk '{print $2}' accession2taxid > taxids_0
-grep -v -w "0" taxids_0 > taxids
-wc -l taxids_0
-wc -l taxids
-
-taxonkit lineage --data-dir ../taxdump taxids > lineage.txt
-
-#taxonkit reformat -P --data-dir ../taxdump lineage.txt \
-#--delimiter ";" \
-#--fill-miss-rank \
-#--format "{k};{p};{c};{o};{f};{g};{s}" \
-#--miss-rank-repl "0" \
-#--miss-rank-repl-prefix "unclassified " \
-#| cut -f 1,3 > taxid2lineage
-
-
-
-taxonkit reformat -P --data-dir ../taxdump lineage.txt \
---delimiter ";" \
---format "{k};{p};{c};{o};{f};{g};{s}" \
-| cut -f 1,3 > taxid2lineage
-
-
- sed "/o__;f__;/d" taxid2lineage > taxid2lineage_final
-
-awk '{print $1}' taxid2lineage_final > taxid_assigned
-
-touch accession2taxid_assigned
-for i in $(cat taxid_assigned)
-do
-grep -w "$i" accession2taxid >> accession2taxid_assigned
-done
-
-
-awk '{print $1}' accession2taxid_assigned > accession_assigned_0
-sort -n accession_assigned_0 | uniq > accession_assigned
-
-wc -l accession
-wc -l accession_assigned
-
-wc -l taxid_assigned
-
-taxonkit lineage --data-dir ../taxdump taxid_assigned > lineage_assigned.txt
-
-taxonkit reformat -P --data-dir ../taxdump lineage_assigned.txt \
---delimiter ";" \
---fill-miss-rank \
---format "{k};{p};{c};{o};{f};{g};{s}" \
---miss-rank-repl "0" \
---miss-rank-repl-prefix "unclassified " \
-| cut -f 1,3 > taxid2lineage_assigned
-
-
-
-taxid2lineage_assigned
-########################################################################
-#extract fasta with new accession ids
-
-/home/wang/genome_tools/faSomeRecords ../SILVA_138.1_LSUParc_tax_silva_trunc_assession.fasta accession_assigned SILVA_138.1_LSUParc_tax_silva_trunc_assigned.fasta
-
-seqkit rmdup SILVA_138.1_LSUParc_tax_silva_trunc_assigned.fasta  -n -o SILVA_138.1_LSUParc_tax_silva_trunc_assigned_dump_removed.fasta
-
-seqkit seq SILVA_138.1_LSUParc_tax_silva_trunc_assigned_dump_removed.fasta -w 0 > SILVA_138.1_LSUParc_tax_silva_trunc_assigned_dump_removed_singleline.fasta
-
-
-
-#################################################################################
-#deduplication to remove redundant sequences with vsearch (100% similarity)
-SILVA_138.1_LSUParc_tax_silva_trunc_assigned_dump_removed_singleline.fasta
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#extract genes at family level
-grep -A 1 -E "Suillus|Rhizopogon" SILVA_138.1_LSUParc_tax_silva_trunc.fasta > suillu_rhizopogon_database.fasta
-
-seqkit rmdup input.fasta  -s -o output_dump_removed.fasta #去除重复的序列
-
-1. alignment
-clustalo -i input.fasta > output.aln
-
-
-2. trimming
-
-
-3. short database processing
-seqkit seq -g -u input.aln > output.fasaln #remove gap 
-
-
-
-
-
-
-fastq_to_fasta -i input.fq -o out.fa -Q 33
-
-ls *.fasta |cut -d"_" -f 1,2,3 |sort -u|while read id ; do
-blastn -subject /media/sf_linux_share/approach_2_test/database/suillu_rhizopogon_database_rmdup_2.fasta  \
--query ${id}_R1.fastq.fasta \
--out ${id}_shortdatabase_2.result \
--evalue 1e-5  -num_alignments 3 -num_threads 1 -parse_deflines  -outfmt 6 \
--ungapped -strand both -perc_identity 99 -qcov_hsp_perc 30 
-done
-
-
-
-
-
-
-
-
-
-
-
-
-blastn -db database/suillus_rhizopogon \
--query AA376R_S97_L003_R1.fastq.fasta \
--out AA376R_S97_L003_R1.fastq.fasta.result \
--evalue 1e-5  -num_alignments 3 -num_threads 1 -parse_deflines \
--ungapped -strand both -perc_identity 99 -qcov_hsp_perc 70
-
-
-
-
-\
--template_length 121
-
-
-
--outfmt 6 \
--max_target_seqs 3
--subject database_name -subject_loc start-stop 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
