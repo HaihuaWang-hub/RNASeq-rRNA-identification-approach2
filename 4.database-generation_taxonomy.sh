@@ -93,10 +93,10 @@ wc -l taxid_assigned
                                        SILVA_138.1_LSUParc_tax_silva_LSU_DNA_filter_final_uniq_assigned.fasta
 
 
-seqkit seq SILVA_138.1_LSUParc_tax_silva_LSU_DNA_filter_final_uniq_assigned.fasta -w 0 >  SILVA_138.1_LSUParc_tax_silva_LSU_DNA_filtered_assigned.fasta 
+seqkit seq SILVA_138.1_LSUParc_tax_silva_LSU_DNA_filter_final_uniq_assigned.fasta -w 0 > SILVA_138.1_LSUParc_tax_silva_LSU_DNA_filter_final_uniq_assigned_nmdump_removed.fasta 
 
-
-mv SILVA_138.1_LSUParc_tax_silva_LSU_DNA_filtered_assigned.fasta 
+mv SILVA_138.1_LSUParc_tax_silva_LSU_DNA_filter_final_uniq_assigned.fasta
+mv SILVA_138.1_LSUParc_tax_silva_LSU_DNA_filter_final_uniq_assigned_nmdump_removed.fasta
 mv accession2taxid_assigned
 mv taxid2lineage_assigned
 
