@@ -56,6 +56,17 @@ do
   
   clustalo -i ${Order}_Order/${Order}.fasta -o ${Order}_Order/${Order}.aln
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 done
    
 
@@ -68,7 +79,7 @@ done
 
 
 
-rm -rf 
+rm -rf *_Order
 
 
 
