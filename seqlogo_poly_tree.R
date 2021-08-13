@@ -3,23 +3,29 @@
 #################################################################################
 #gene logo :https://cloud.tencent.com/developer/article/1511065
 #################################################################################
-#直接从CRAN中安装
+#install from CRAN
 #install.packages("ggseqlogo")
-#从GitHub中安装
+#install from github
 #devtools::install.github("omarwagih/ggseqlogo")
 
-#加载包
 library(ggplot2)
 library(ggseqlogo)
 library(seqinr)
 library(Biostrings)
+install.packages("spiralize")
 
-setwd("F:/linux_share/approach_2_test/database")
 
-#加载个人数据
-my_fasta <- read.fasta(file = "suillus_rhizopogon_database.fas", seqtype = "DNA", as.string = T)
 
-my_protein = read.fasta(file = "proteins.fasta", seqtype = "AA",as.string = TRUE)
+#read the sequence
+DNA_fasta <- read.fasta(file = "suillus_rhizopogon_database.fas", seqtype = "DNA", as.string = T)
+
+
+
+
+
+
+
+
 
 
 #输出fasta文件:https://blog.csdn.net/weixin_42960896/article/details/100339991
@@ -103,6 +109,28 @@ ggseqlogo(seqs_dna$MA0001.1, col_scheme=cs2)
 
 #同时绘制多个序列标志
 ggseqlogo(seqs_dna, ncol = 4)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
