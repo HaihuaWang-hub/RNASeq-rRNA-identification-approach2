@@ -13,7 +13,7 @@ CPU="8"
 ###############################################
 #pre-filter the LSU region by using the metaxa2
 
-
+#https://zhuanlan.zhihu.com/p/345533172
 #https://microbiology.se/publ/metaxa2_users_guide_2.2.pdf
 metaxa2 -i SILVA_138.1_LSUParc_tax_silva_DNA.fasta \
         -o SILVA_138.1_LSUParc_tax_silva_DNA_database_LSU \
