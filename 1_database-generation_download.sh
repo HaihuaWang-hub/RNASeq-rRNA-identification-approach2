@@ -21,5 +21,5 @@ wget -c https://www.arb-silva.de/fileadmin/silva_databases/current/Exports/SILVA
 gunzip $work_dir/raw_database/SILVA_138.1_LSUParc_tax_silva.fasta.gz
 
 #RNA to DNA
-seqkit seq --rna2dna SILVA_138.1_LSUParc_tax_silva.fasta > SILVA_138.1_LSUParc_tax_silva_DNA.fasta
+seqkit seq --threads 4 --rna2dna SILVA_138.1_LSUParc_tax_silva.fasta > SILVA_138.1_LSUParc_tax_silva_DNA.fasta
 
