@@ -56,11 +56,12 @@ do
   
   clustalo -i ${Order}_Order/${Order}.fasta -o ${Order}_Order/${Order}.aln
   
+  cp ${Order}_Order/${Order}.aln ${Order}_Order/order_seq_aligned.aln
   
-  
-  
-  
-  
+  cd ${Order}_Order
+  Rscript 6.seqlogo_plot.R
+  mv sequence_logo.pdf ${Order}_seqLogo.pdf
+  cd ../
   
   
   
