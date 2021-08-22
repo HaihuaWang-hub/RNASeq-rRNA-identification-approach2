@@ -35,6 +35,20 @@ do
 esummary -db nuccore -id $i | xtract -pattern DocumentSummary -element Caption,TaxId >> accession2taxid
 done
 
+
+#list unsigned taxids
+for i in $(cat accession.number)
+do
+  var1=$(echo | grep -r  "$i" accession2taxid)
+  if [[ "$var1" = "" ]];
+  then
+    echo $i >> taxid_unassigned
+    esummary -db nuccore -id $i | xtract -pattern DocumentSummary -element Caption,TaxId >> taxid_unassigned
+   fi
+done
+
+
+
 # cat accession | epost -db nuccore | esummary -db nuccore | xtract -pattern DocumentSummary -element Caption,TaxId > accession2taxid
 
 
@@ -45,6 +59,8 @@ wc -l taxids
 #5. link taxid to lineage
 taxonkit lineage --data-dir taxdump taxids > lineage.txt
 
+#if only fungi included,shoud extract the only fungal lineage
+grep -r "Fungi" >> lineage_fungi.txt
 
 #6. formate the lineage
 #taxonkit reformat -P --data-dir ../taxdump lineage.txt \
