@@ -23,7 +23,16 @@ mv taxid2lineage_assigned sequence_sep
 
 
 #1. extract taxonomy names in Order level
-grep -i -o -P '(?<=;o__).*(?=;f__)' taxid2lineage_assigned | sort -u > order_level_ids
+while read line
+do
+echo $line |cut -d ";" -f 4 |cut -d "_" -f 3  >> order_level_ids_0
+done < taxid2lineage_assigned
+
+cat order_level_ids_0 |sort -u > order_level_ids
+
+
+
+
 
 for Order in $(cat order_level_ids)
 do
