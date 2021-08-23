@@ -93,7 +93,7 @@ do
 grep -r "$i" accession2taxid >> accession2taxid_assigned
 done
 
-awk '{print $1}' accession2taxid_assigned > accession_assigned
+awk '{print $1}' accession2taxid_assigned |cut -d":" -f 2 |sort -u > accession_assigned
 
 
 wc -l accession.number
@@ -111,10 +111,10 @@ wc -l taxid_assigned
 
 seqkit seq SILVA_138.1_LSUParc_tax_silva_LSU_DNA_filter_final_uniq_assigned.fasta -w 0 > SILVA_138.1_LSUParc_tax_silva_LSU_DNA_filter_final_uniq_assigned_nmdump_removed.fasta 
 
-mv SILVA_138.1_LSUParc_tax_silva_LSU_DNA_filter_final_uniq_assigned.fasta
-mv SILVA_138.1_LSUParc_tax_silva_LSU_DNA_filter_final_uniq_assigned_nmdump_removed.fasta
-mv accession2taxid_assigned
-mv taxid2lineage_assigned
+mv SILVA_138.1_LSUParc_tax_silva_LSU_DNA_filter_final_uniq_assigned.fasta ../result_dir
+mv SILVA_138.1_LSUParc_tax_silva_LSU_DNA_filter_final_uniq_assigned_nmdump_removed.fasta ../result_dir
+mv accession2taxid_assigned ../result_dir
+mv taxid2lineage_assigned ../result_dir
 
 
 
