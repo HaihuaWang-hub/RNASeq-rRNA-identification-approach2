@@ -1,11 +1,28 @@
 #!/bin/bash -l
+#SBATCH --job-name=LSU_database_generation_preprocess      # Job name
+#SBATCH --mail-type=all            # Mail events (NONE, BEGIN, END, FAIL, ALL)
+#SBATCH --mail-user=wanghaihua@ufl.edu       # Where to send mail	
+#SBATCH --ntasks=100                      # Number of MPI ranks
+#SBATCH --cpus-per-task=9               # Number of cores per MPI rank 
+#SBATCH --nodes=1                       # Number of nodes
+#SBATCH --ntasks-per-node=1             # How many tasks on each node
+#SBATCH --ntasks-per-socket=1           # How many tasks on each CPU or socket
+#SBATCH --mem-per-cpu=7G             # Memory per core
+#SBATCH --time=30-00:00:00                 # Time limit hrs:min:sec
+#SBATCH --output=LSU_database_generation_preprocess_%j.log     # Standard output and error log
+
+pwd; hostname; date
+
+
+CPU="18"
+
 
 module load metaxa2
-module load ITSx
-module load seqkit
+module load itsx/1.1b
+#module load seqkit
 module load clustalo
-
-CPU="8"
+module load conda
+conda activate RNASeq
 
 #This is the code for generation of mulit- short database D1D2 region
 
@@ -91,6 +108,7 @@ seqkit seq SILVA_138.1_LSUParc_tax_silva_DNA_database_LSU.eukaryota.fasta -w 0 >
 fasta_file="SILVA_138.1_LSUParc_tax_silva_LSU_DNA_pre-filtered_database_single_line.fasta"
 result_file="SILVA_138.1_LSUParc_tax_silva_LSU_DNA_pre-filtered_database_result.fasta"
 forward_LR0R="ACCCGCTGAACTTAAGC"
+reverse_LR3_primer="CCGTGTTTCAAGACGGG"
 reverse_LR3="CCCGTCTTGAAACACGG"
 middle_LR21="AAAGGGAAACGCTTGA"
 middle_LF402F="CCGATAGCG"
@@ -101,20 +119,24 @@ do
    var3=$(echo $line | grep "${reverse_LR3}" )
 if [[ "$var1" != "" ]];
 then
-   echo $line >> $result_file
+    #seq_name="$line"
+    #echo $line >> $result_file
 else
    if [[ "$var2" != "" ]];
    then
        if [[ "$var3" != "" ]];
        then
-          echo $line| grep -i -o -P '(?<=ACCCGCTGAACTTAAGC).*(?=CCCGTCTTGAAACACGG)' >> $result_file
+          echo $line|grep -B 1 "ACCCGCTGAACTTAAGC" |seqkit amplicon -F $forward_LR0R -R $reverse_LR3_primer  >> $result_file
+          #echo $line| grep -i -o -P '(?<=ACCCGCTGAACTTAAGC).*(?=CCCGTCTTGAAACACGG)' >> $result_file
        else
-          echo ${line#*${forward_LR0R}}  >> $result_file
+          echo $line|grep -B 1 "ACCCGCTGAACTTAAGC" |seqkit amplicon -F $forward_LR0R -r 1:780 >> $result_file
+          #echo ${line#*${forward_LR0R}}  >> $result_file
        fi
    else
        if [[ "$var3" != "" ]];
        then
-          echo ${line%${reverse_LR3}*} >> $result_file
+          echo $line|grep -B 1 "CCCGTCTTGAAACACGG" |seqkit amplicon -R $reverse_LR3_primer -r -780:-1 >> $result_file
+          #echo ${line%${reverse_LR3}*} >> $result_file
        fi
    fi
 fi
@@ -122,7 +144,7 @@ done < $fasta_file
 
 
 #remove the accession NO. without sequence and filter the sequence shorter than 250bp
-seqkit seq -g -w 0 -m 250 $result_file > SILVA_138.1_LSUParc_tax_silva_LSU_DNA_filter_single_line.fasta
+seqkit seq -g -w 0 -m 250 -M 800  $result_file > SILVA_138.1_LSUParc_tax_silva_LSU_DNA_filter_single_line.fasta
 
 
 
