@@ -1,11 +1,28 @@
 #!/bin/bash -l
+#SBATCH --job-name=LSU_database_generation_preprocess_taxonomy      # Job name
+#SBATCH --mail-type=all            # Mail events (NONE, BEGIN, END, FAIL, ALL)
+#SBATCH --mail-user=wanghaihua@ufl.edu       # Where to send mail	
+#SBATCH --ntasks=1000                      # Number of MPI ranks
+#SBATCH --cpus-per-task=9               # Number of cores per MPI rank 
+#SBATCH --nodes=1                       # Number of nodes
+#SBATCH --ntasks-per-node=1             # How many tasks on each node
+#SBATCH --ntasks-per-socket=1           # How many tasks on each CPU or socket
+#SBATCH --mem-per-cpu=7G             # Memory per core
+#SBATCH --time=30-00:00:00                 # Time limit hrs:min:sec
+#SBATCH --output=LSU_database_generation_preprocess_taxonomy_%j.log     # Standard output and error log
 
-module load entrez-direct
-module load ncbitax2lin
-module load taxonkit 
-module load 
+pwd; hostname; date
 
-CPU="8"
+
+CPU="18"
+#module load entrez-direct
+#module load ncbitax2lin
+#module load taxonkit 
+
+module load conda 
+conda activate database
+
+
 # conda install -c bioconda entrez-direct
 # pip install -U ncbitax2lin /conda install -c bioconda taxonkit 
 
@@ -71,41 +88,36 @@ grep -r "Fungi" >> lineage_fungi.txt
 #--miss-rank-repl-prefix "unclassified " \
 #| cut -f 1,3 > taxid2lineage
 
-taxonkit reformat -P  lineage.txt \
+taxonkit reformat -P  lineage_fungi.txt \
 --data-dir taxdump \
 --delimiter ";" \
 --format "{k};{p};{c};{o};{f};{g};{s}" \
-| cut -f 1,3  > taxid2lineage
+| cut -f 1,3  > taxid2lineage_fungi
 
 
 
 #7. refine the lineage (remove the lineage without "Order" level )
- sed "/o__;f__;/d" taxid2lineage > taxid2lineage_assigned
+ # sed "/o__;f__;/d" taxid2lineage_fungi > taxid2lineage_assigned
 
 #8. extract assigned taxid
-awk '{print $1}' taxid2lineage_assigned > taxid_assigned
+awk '{print $1}' taxid2lineage_fungi > taxid_assigned_fungi
 
 #9. extract assigned accession2taxid
-touch accession2taxid_assigned
+touch accession2taxid_fungi_assigned
 
-for i in $(cat taxid_assigned)
+for i in $(cat taxid_assigned_fungi)
 do
-grep -r "$i" accession2taxid >> accession2taxid_assigned
+grep -r "$i" accession2taxid >> accession2taxid_fungi_assigned
 done
 
-awk '{print $1}' accession2taxid_assigned |cut -d":" -f 2 |sort -u > accession_assigned
-
-
-wc -l accession.number
-wc -l accession_assigned
-wc -l taxid_assigned
+awk '{print $1}' accession2taxid_fungi_assigned |cut -d":" -f 2 |sort -u > accession_assigned_fungi
 
 
 ########################################################################
 #extract fasta with new accession ids
 
-/home/wang/genome_tools/faSomeRecords SILVA_138.1_LSUParc_tax_silva_LSU_DNA_filter_final_uniq.fasta \
-                                       accession_assigned \
+faSomeRecords SILVA_138.1_LSUParc_tax_silva_LSU_DNA_filter_final_uniq.fasta \
+                                       accession_assigned_fungi \
                                        SILVA_138.1_LSUParc_tax_silva_LSU_DNA_filter_final_uniq_assigned.fasta
 
 
@@ -113,8 +125,8 @@ seqkit seq SILVA_138.1_LSUParc_tax_silva_LSU_DNA_filter_final_uniq_assigned.fast
 
 mv SILVA_138.1_LSUParc_tax_silva_LSU_DNA_filter_final_uniq_assigned.fasta ../result_dir
 mv SILVA_138.1_LSUParc_tax_silva_LSU_DNA_filter_final_uniq_assigned_nmdump_removed.fasta ../result_dir
-mv accession2taxid_assigned ../result_dir
-mv taxid2lineage_assigned ../result_dir
+mv accession2taxid_fungi_assigned ../result_dir
+mv taxid2lineage_fungi ../result_dir
 
 
 
