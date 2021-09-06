@@ -1,7 +1,7 @@
 #!/bin/bash -l
 #SBATCH --job-name=LSU_database_generation_preprocess      # Job name
 #SBATCH --mail-type=all            # Mail events (NONE, BEGIN, END, FAIL, ALL)
-#SBATCH --mail-user=wanghaihua@ufl.edu       # Where to send mail	
+#SBATCH --mail-user=wanghaihua@ufl.edu       # Where to send mail
 #SBATCH --ntasks=100                      # Number of MPI ranks
 #SBATCH --cpus-per-task=9               # Number of cores per MPI rank 
 #SBATCH --nodes=1                       # Number of nodes
@@ -119,24 +119,27 @@ do
    var3=$(echo $line | grep "${reverse_LR3}" )
 if [[ "$var1" != "" ]];
 then
-    #seq_name="$line"
+    seq_name="$line"
     #echo $line >> $result_file
 else
    if [[ "$var2" != "" ]];
    then
        if [[ "$var3" != "" ]];
        then
-          echo $line|grep -B 1 "ACCCGCTGAACTTAAGC" |seqkit amplicon -F $forward_LR0R -R $reverse_LR3_primer  >> $result_file
-          #echo $line| grep -i -o -P '(?<=ACCCGCTGAACTTAAGC).*(?=CCCGTCTTGAAACACGG)' >> $result_file
+          echo -ne "$seq_name\n$line\n" |seqkit amplicon -F $forward_LR0R -R $reverse_LR3_primer  >> $result_file
+#          echo $line|grep -B 1 "ACCCGCTGAACTTAAGC" |seqkit amplicon -F $forward_LR0R -R $reverse_LR3_primer  >> $result_file
+#          echo $line| grep -i -o -P '(?<=ACCCGCTGAACTTAAGC).*(?=CCCGTCTTGAAACACGG)' >> $result_file
        else
-          echo $line|grep -B 1 "ACCCGCTGAACTTAAGC" |seqkit amplicon -F $forward_LR0R -r 1:780 >> $result_file
-          #echo ${line#*${forward_LR0R}}  >> $result_file
+          echo -ne "$seq_name\n$line\n" |seqkit amplicon -F $forward_LR0R -r 1:780 >> $result_file
+#          echo $line|grep -B 1 "ACCCGCTGAACTTAAGC" |seqkit amplicon -F $forward_LR0R -r 1:780 >> $result_file
+#          echo ${line#*${forward_LR0R}}  >> $result_file
        fi
    else
        if [[ "$var3" != "" ]];
        then
-          echo $line|grep -B 1 "CCCGTCTTGAAACACGG" |seqkit amplicon -R $reverse_LR3_primer -r -780:-1 >> $result_file
-          #echo ${line%${reverse_LR3}*} >> $result_file
+          echo -ne "$seq_name\n$line\n" |seqkit amplicon -R $reverse_LR3_primer -r -780:-1 >> $result_file
+#          echo $line|grep -B 1 "CCCGTCTTGAAACACGG" |seqkit amplicon -R $reverse_LR3_primer -r -780:-1 >> $result_file
+#          echo ${line%${reverse_LR3}*} >> $result_file
        fi
    fi
 fi
