@@ -12,7 +12,7 @@
 #SBATCH --output=LSU_database_generation_download_%j.log     # Standard output and error log
 
 pwd; hostname; date
-module load seqkit
+
 
 CPU="18"
 
