@@ -2,13 +2,13 @@
 #SBATCH --job-name=LSU_database_generation_preprocess_taxonomy      # Job name
 #SBATCH --mail-type=all            # Mail events (NONE, BEGIN, END, FAIL, ALL)
 #SBATCH --mail-user=wanghaihua@ufl.edu       # Where to send mail	
-#SBATCH --ntasks=1000                      # Number of MPI ranks
-#SBATCH --cpus-per-task=9               # Number of cores per MPI rank 
+#SBATCH --ntasks=1000000000000000                      # Number of MPI ranks
+#SBATCH --cpus-per-task=1               # Number of cores per MPI rank 
 #SBATCH --nodes=1                       # Number of nodes
 #SBATCH --ntasks-per-node=1             # How many tasks on each node
 #SBATCH --ntasks-per-socket=1           # How many tasks on each CPU or socket
 #SBATCH --mem-per-cpu=7G             # Memory per core
-#SBATCH --time=30-00:00:00                 # Time limit hrs:min:sec
+#SBATCH --time=1-00:00:00                 # Time limit hrs:min:sec
 #SBATCH --output=LSU_database_generation_preprocess_taxonomy_%j.log     # Standard output and error log
 
 pwd; hostname; date
@@ -18,9 +18,10 @@ CPU="18"
 #module load entrez-direct
 #module load ncbitax2lin
 #module load taxonkit 
-
+module load ucsc/20210803
+module load seqkit/0.10.2
 module load conda 
-conda activate database
+conda activate RNASeq
 
 
 # conda install -c bioconda entrez-direct
@@ -34,10 +35,10 @@ conda activate database
 #link the accession number to taxid and taxname
 
 #1. download database
-mkdir taxdump
-wget -c https://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz
-mv taxdump.tar.gz taxdump
-tar -zxvf taxdump/taxdump.tar.gz -C taxdump
+# mkdir taxdump
+# wget -c https://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz
+# mv taxdump.tar.gz taxdump
+# tar -zxvf taxdump/taxdump.tar.gz -C taxdump
 
 #2. extract the accession number
 grep -r ">" SILVA_138.1_LSUParc_tax_silva_LSU_DNA_filter_final_uniq.fasta|cut -d">" -f 2  > accession.number
@@ -63,6 +64,7 @@ do
     esummary -db nuccore -id $i | xtract -pattern DocumentSummary -element Caption,TaxId >> taxid_unassigned
    fi
 done
+
 
 
 
