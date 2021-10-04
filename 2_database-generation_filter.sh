@@ -1,7 +1,7 @@
 #!/bin/bash -l
 #SBATCH --job-name=LSU_database_generation_preprocess      # Job name
 #SBATCH --mail-type=all            # Mail events (NONE, BEGIN, END, FAIL, ALL)
-#SBATCH --mail-user=wanghaihua@ufl.edu       # Where to send mail
+#SBATCH --mail-user=wanghaihua@ufl.edu       # Where to send mail	
 #SBATCH --ntasks=100                      # Number of MPI ranks
 #SBATCH --cpus-per-task=9               # Number of cores per MPI rank 
 #SBATCH --nodes=1                       # Number of nodes
